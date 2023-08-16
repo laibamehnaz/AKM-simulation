@@ -1,5 +1,5 @@
 ---
-title: "Homework on two-way fixed effects"
+title: "Simulation on two-way fixed effects"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
@@ -45,7 +45,7 @@ lambda = 0.05
 
 csort = 0.5 # sorting effect
 cnetw = 0.2 # network effect
-csig  = 0.5
+csig  = 0.5 
 
 # lets create type specific transition matrices
 # we are going to use joint normal centered on different values
@@ -54,7 +54,7 @@ for (l in 1:nl) for (k in 1:nk) {
   G[l,k,] = dnorm(csort*(psi[k] - alpha[l])) * dnorm(cnetw*(psi[k] - psi))
   G[l,k,] = dnorm( psi - cnetw *psi[k] - csort * alpha[l],sd = csig )
   G[l,k,] = G[l,k,]/sum(G[l,k,])
-} 
+}
 
 
 # we then solve for the stationary distribution over psis for each alpha value
