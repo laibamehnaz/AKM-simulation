@@ -238,14 +238,44 @@ This requires to first extract a large connected set, and then to estimate the l
 
 ## Extracting the connected set
 
-Because we are not going to deal with extremely large data-sets, we can use of the shelf algorithms to extract the connected set. Use the function `conComp` from the package `ggm` to extract the connected set from our data. To do so you will need to construct first an adgency matrix between teh firms. Here is how I would proceed to construct the adjency matrix:
+Because we are not going to deal with extremely large data-sets, we can use of the shelf algorithms to extract the connected set. Use the function `conComp` from the package `ggm` to extract the connected set from our data. To do so you will need to construct first an adgency matrix between the firms. Here is how I would proceed to construct the adjency matrix:
 
  1. Append the lag firm id as a new row in your data `data[ ,fid.l1 := data[J(i,t-1),fid]]`, for which you need to first run `setkey(data,i,t)`
  2. Extract all moves from this data set `jdata = data[fid.l1!=fid]` and only keep unique pairs
  3. Then create a column `value:=1` and cast this new data to an array using the `acast` command with `fill=0`
 
 <span class="label label-success">Question 4</span> Use the previous procedure, extract the connected set, drop firms not in the set (I expect that all firms will be in the set).
+```
 
+```{r}
+setkey(data,i,t)
+
+adjMat <- function(data){ 
+  setkey(data,i,t)
+  data[ ,fid.l1 := data[J(i,t-1),fid]]
+  data <- data[complete.cases(data)]
+  nfirms = data[,max(fid)]
+  jdata = data[fid.l1!=fid][,list(fid,fid.l1)]
+  jdata = unique(jdata)
+  setkey(jdata,fid,fid.l1)
+  # jdata holds the indices where a sparse matrix should be 1.
+  amat = Matrix::sparseMatrix(i=jdata[,c(fid,fid.l1)],j=jdata[,c(fid.l1,fid)],dims=c(nfirms,nfirms))
+ amat
+}
+
+concomp <- function(data){
+  setkey(data,i,t)
+  data[ ,fid.l1 := data[J(i,t-1),fid]]
+  data <- data[complete.cases(data)]
+  cf = lfe::compfactor(list(f1=data[,factor(fid)],f2=data[,factor(fid.l1)]))
+  fr = data.frame(f1=data[,factor(fid)],f2=data[,factor(fid.l1)],cf)
+  data = data[fr$cf==1]
+  return(data)
+}
+
+```
+
+```
 ## Estimating worker and firms FE
 
 The part of the problem set is for you to implement the AKM estimator. As discussed in class, this can be done simply by updating in turn the worker FE and the firms FE. 
