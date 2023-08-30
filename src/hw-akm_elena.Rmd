@@ -33,6 +33,23 @@ We are going to model the mobility between workers and firms. Given a transition
 nk = 30
 nl = 10
 
+
+## Calibration to CHK data
+# p$psi_sd = 0.16
+# p$alpha_sd = 0.29
+# p$w_sigma = 0.37
+# p$psi   = with(p,qnorm(1:nk/(nk+1)) * psi_sd)
+# p$alpha = with(p,qnorm(1:nl/(nl+1)) * alpha_sd)
+# buildData <- function(p){
+  #G = getG(p)
+  #H = getH(p,G)
+  #data = sim(p,G,H)
+  #addSpells(p,data)
+  #addWage(p,data)
+  #return(data) 
+#}
+#data <- buildData(p)
+
 alpha_sd = 1
 psi_sd   = 1
 
@@ -44,7 +61,7 @@ alpha = qnorm(1:nl/(nl+1)) * psi_sd
 lambda = 0.05
 
 csort = 0.5 # sorting effect
-cnetw = 0 # network effect
+cnetw = 0.2 # network effect
 csig  = 0.5 
 
 # lets create type specific transition matrices
@@ -52,7 +69,7 @@ csig  = 0.5
 G = array(0,c(nl,nk,nk)) # def: conditional distribution k,k' given l
 for (l in 1:nl) for (k in 1:nk) {
   #G[l,k,] = dnorm(csort*(psi[k] - alpha[l])) * dnorm(cnetw*(psi[k] - psi))
-  G[l,k,] = dnorm( psi - cnetw *psi[k] - csort * alpha[l],sd = csig )
+  G[l,k,] = dnorm( psi - cnetw *psi[k] - csort * alpha[l],sd = csig)
   #G[l,k,] = (dnorm(csort*(psi[k] - alpha[l])) + dnorm(cnetw*(psi[k] - psi)))/2
   G[l,k,] = G[l,k,]/sum(G[l,k,])
 }
@@ -157,7 +174,7 @@ firm_mover <- firm_mover[,sum(ones),fid]
 data <- data[, movers_size:= firm_mover[fid,V1]]
 
 # PLOTS
-hist(data[t==1]$firm_size)
+hist(data[t==1]$firm_size) # at any t, the firm size distribution is the same
 hist(data$movers_size)
 
 ```
@@ -226,12 +243,6 @@ data_ckh <- data_ckh[,mean(lw),list(t,flag_ini,flag_end)]
 ```
 
 
- ```
- 
-## Calibrating the parameters
- 
-<span class="label label-success">Question 3</span> Pick the parameters `psi_sd`,`alpha_sd`,`csort`, `csig` and `w_sigma` to roughly match the decomposition in the Card-Heining-Kline [paper](http://www.nber.org/papers/w18522) (note that they often report numbers in standard deviations, not in variances).  `psi_sd`, `alpha_sd`, `w_sigma` can be directly calibrated from CHK. On the other hand, `csort` and `csig` needs to be calibrated to match the numbers in CHK after AKM estimation. If AKM estimation on psi and alpha is too slow, use the true psi and alpha and get residuals directly. 
-  
 # Estimating two-way fixed effects
 
 This requires to first extract a large connected set, and then to estimate the linear problem with many dummies.
@@ -240,12 +251,6 @@ This requires to first extract a large connected set, and then to estimate the l
 
 Because we are not going to deal with extremely large data-sets, we can use of the shelf algorithms to extract the connected set. Use the function `conComp` from the package `ggm` to extract the connected set from our data. To do so you will need to construct first an adgency matrix between the firms. Here is how I would proceed to construct the adjency matrix:
 
- 1. Append the lag firm id as a new row in your data `data[ ,fid.l1 := data[J(i,t-1),fid]]`, for which you need to first run `setkey(data,i,t)`
- 2. Extract all moves from this data set `jdata = data[fid.l1!=fid]` and only keep unique pairs
- 3. Then create a column `value:=1` and cast this new data to an array using the `acast` command with `fill=0`
-
-<span class="label label-success">Question 4</span> Use the previous procedure, extract the connected set, drop firms not in the set (I expect that all firms will be in the set).
-```
 
 ```{r}
 setkey(data,i,t)
@@ -273,9 +278,11 @@ concomp <- function(data){
   return(data)
 }
 
-```
+data <- concomp(data)
 
 ```
+
+
 ## Estimating worker and firms FE
 
 The part of the problem set is for you to implement the AKM estimator. As discussed in class, this can be done simply by updating in turn the worker FE and the firms FE. 
@@ -285,34 +292,92 @@ Start by appending 2 new columns `alpha_hat` and `psi_hat` to your data. Then lo
  1. update `alpha_hat` by just taking the mean within `i` net of firm FE, use data.table to do that very efficiently
  2. update `psi_hat`   by just taking the mean within `fid` net of worker FE, use data.table to do that very efficiently
  
+ 
+## Estimating worker and firms FE
+
+Estimating this model is non-trivial. Traditional approaches like a within-transformation is not sufficient here, as we have two fixed effects to estimate. [Guimareas and Portugal](https://s3.amazonaws.com/academia.edu.documents/42461471/Variable_selection_in_linear_regression20160209-26324-14r87y1.pdf?AWSAccessKeyId=AKIAIWOWYYGZ2Y53UL3A&Expires=1525336798&Signature=I2SdtwWgl0U6e28114dmaiLjlA4%3D&response-content-disposition=inline%3B%20filename%3DVariable_selection_in_linear_regression.pdf#page=130) propose a *ZigZag* estimator in the Stata Journal. [Simen Gaure](https://www.sciencedirect.com/science/article/pii/S0167947313001266) proposes an almost equivalent approach and develops the [`lfe`](https://cran.r-project.org/web/packages/lfe/lfe.pdf) package for R. The idea in both approaches starts with the formulation
+
+$$
+\mathbf{Y} = \mathbf{Z}\beta + \mathbf{D}\alpha + \epsilon
+$$
+
+where $\mathbf{Z}$ is $(N,k)$, and $\mathbf{D}$ is a  $(N,G_1)$ matrix of dummy variables: element $(i,j)$ of $\mathbf{D}$ is $1$ if $i$ is associated to $j$.
+
+Both papers show the recursive relationship
+
+$$
+\left[ \begin{array}{c}
+\beta &=& (\mathbf{Z}'\mathbf{Z})^{-1} \mathbf{Z}'(\mathbf{Y}-\mathbf{D}\alpha) \\
+\alpha &=& (\mathbf{D}'\mathbf{D})^{-1} \mathbf{D}'(\mathbf{Y}-\mathbf{Z}\beta)
+\end{array}
+\right]
+$$
+
+* line 2 is just `data[,mean(resid(lm(y ~ z))),by=i]`
+* Dimensionality of $\mathbf{D}$ becomes irrelevant.
+* Same principle for more than 1 FE:
+
+$$
+\mathbf{Y} = \mathbf{Z}\beta + \mathbf{D}_1\alpha + \mathbf{D}_2\gamma + \epsilon
+$$
+
+and recursive structure: 
+
+$$
+\left[ \begin{array}{c}
+\beta &=& (\mathbf{Z}'\mathbf{Z})^{-1} \mathbf{Z}'(\mathbf{Y}-\mathbf{D}_1\alpha-\mathbf{D}_2\gamma) \\
+\alpha &=& (\mathbf{D}_1'\mathbf{D}_1)^{-1} \mathbf{D}_1'(\mathbf{Y}-\mathbf{Z}\beta-\mathbf{D}_2\gamma) \\
+\gamma &=& (\mathbf{D}_2'\mathbf{D}_2)^{-1} \mathbf{D}_2'(\mathbf{Y}-\mathbf{Z}\beta-\mathbf{D}_1\alpha)
+\end{array}
+\right]
+$$
+
+* First, store a `mod = data[,lm(y ~ z + D1 + D2)]`
+* line 2 is just `data[,mean(resid(mod) + coef(mod)[3]*D2),by=i]`
+* line 3 is just `data[,mean(resid(mod) + coef(mod)[2]*D1),by=j]`
+
+Guimaraes+Portugal do this in an iterative fashion until the difference in mean squared error (MSE) of successive estimates of line 0 becomes small.
+
+ 
 <span class="label label-success">Question 5</span>  Run the privious steps in a loop, at each step evaluates by how much as the total mean square error changed. Check that is goes down with every step. Stops when the MSE decreases by less than 1e-9. Get MSE only from movers. 
 
 <span class="label label-info">Note</span> You can increase speed by focusing on movers only first to recover the `psi`.
 
-# Limited mobility bias
 
-We now have every thing we need to look at the impact of limited mobility bias. Compute the following:
+```{r}
+guimaraesPortugal <- function(data,tol=1e-6){
+  setkey(data,i,t)
+  data[,fid.l1 := data[J(i,t-1)][["fid"]]]
+  data[,move:=fid!=fid.l1]
+  mvid <- data[(move),list(id=unique(i))]
+  data[,alpha_hat := 0.0]
+  data[,psi_hat := 0.0]
+  delta = Inf
+  MSE1 = Inf
+  i = 0
+  while (delta>tol){
+    i = i + 1
+    mod = data[,lm(lw ~ psi_hat + alpha_hat)]
+    coefs = coef(mod)
+    if (i==1){
+      coefs[2:3] <- 0
+    }
+    data[,res := resid(mod)]
+    MSE0 = data[.(mvid$id),mean(res^2)]
+    delta = abs(MSE0 - MSE1)
+    MSE1 = MSE0
+    data[,alpha_hat := mean(res + coefs[3]*alpha_hat),by=i ]
+    data[,psi_hat := mean(res + coefs[2]*psi_hat),by=fid ]
+    if (i==1 || (i %% 10 == 0)){
+     # flog.info("iter=%d, MSE=%f, delta(MSE)=%f",i,MSE0,delta)  
+    }
+  }
+  return(data)
+}
+dd=guimaraesPortugal(data)
 
- 1. Compute the estimated variance of firm FE
- 2. Do it for varying level of mobility $\lambda$. Collect for each the number of movers, the actual variance and the estimated variance. Run it for diffenrent panel lengths: 5,6,8,10,15.
+# estimated coefs on a simple lm must be one
+summary(lm(lw~alpha_hat+psi_hat,data))
 
-<span class="label label-success">Question 6</span> Report this in a plot. Fix T and vary lambda. Plot (i) correlation between firm fixed effect and individual fixed effect and (ii) variance of firm fixed effect against the number of movers. This should look like the [Andrews and Al](http://www.sciencedirect.com/science/article/pii/S0165176512004272) plot.
-
-## Alleviating the bias using split sample
-
-Pick a relatively short $T$ together with a low $\lambda$. Simulate one data-set. Next conduct the following procedure:
-
- 1. Estimate AKM on the full sample
- 2. Split your sample within firm, ie, within firm, split your movers in a balanced way between group 1 and group 2. Do the same for the individual who don't move. You can do that by assigning a random number to each worker within firm and then defining the group as being below or above the median.
- 3. Perform AKM on eash split-sample
- 4. Compute biased-corrected estimates for variance of firm-effects and covariances between worker and firm effects.
-
-The theta in bias correction formula is on var(psi), not psi itself.
-
-<span class="label label-success">Question 7</span> Report the true values, the non biased corrected and the bias corrected. 
-
-
-
-
-
+```
 
