@@ -21,8 +21,6 @@ require(gridExtra)
 
 # Constructing Employer-Employee matched data
 
-
-
 ## Simulating a network
 
 One central piece is to have a network of workers and firms over time. We then start by simulating such an object. The rest of the simulation will focus on adding wages to this model. As we know, a central issue of the network will be the number of movers.
@@ -35,20 +33,9 @@ nl = 10
 
 
 ## Calibration to CHK data
-# p$psi_sd = 0.16
-# p$alpha_sd = 0.29
-# p$w_sigma = 0.37
-# p$psi   = with(p,qnorm(1:nk/(nk+1)) * psi_sd)
-# p$alpha = with(p,qnorm(1:nl/(nl+1)) * alpha_sd)
-# buildData <- function(p){
-  #G = getG(p)
-  #H = getH(p,G)
-  #data = sim(p,G,H)
-  #addSpells(p,data)
-  #addWage(p,data)
-  #return(data) 
-#}
-#data <- buildData(p)
+# psi_sd = 0.16
+# alpha_sd = 0.29
+# w_sigma = 0.37
 
 alpha_sd = 1
 psi_sd   = 1
