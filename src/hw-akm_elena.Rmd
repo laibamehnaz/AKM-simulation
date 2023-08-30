@@ -1,5 +1,5 @@
 ---
-title: "Simulation on two-way fixed effects"
+title: "Simulation on AKM fixed effects"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
@@ -10,7 +10,7 @@ output:
       smooth_scroll: false
 ---
 
-The goal of the following homework is to develop our understanding of the two-way fixed effect models. See the original paper by [Abowd Kramartz and Margolis](http://onlinelibrary.wiley.com/doi/10.1111/1468-0262.00020/full).
+The goal of the following simulation is to develop our understanding of the two-way fixed effect model. See the original paper by [Abowd Kramartz and Margolis](http://onlinelibrary.wiley.com/doi/10.1111/1468-0262.00020/full).
 
 ```{r,echo=FALSE,message=FALSE,warning=FALSE}
 require(data.table)
@@ -25,7 +25,7 @@ require(gridExtra)
 
 ## Simulating a network
 
-One central piece is to have a network of workers and firms over time. We then start by simulating such an object. The rest of homework will focus on adding wages to this model. As we know from the lectures, a central issue of the network will be the number of movers.
+One central piece is to have a network of workers and firms over time. We then start by simulating such an object. The rest of the simulation will focus on adding wages to this model. As we know, a central issue of the network will be the number of movers.
 
 We are going to model the mobility between workers and firms. Given a transition matrix we can solve for a stationary distrubtion, and then construct our panel from there.
 
