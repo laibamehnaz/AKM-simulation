@@ -284,7 +284,7 @@ data <- concomp(data)
 aa = unique(data$fid)
 Nfirm_con = length(aa)
 
-print("proportion of firms in the connected set")
+print("proportion of firms in the connected set is")
 print(Nfirm_con/Nfirm)
 ```
 
