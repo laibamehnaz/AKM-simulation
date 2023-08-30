@@ -1,7 +1,7 @@
-name: 'Econ 34430 '
+name: 'AKM Simulation '
 output_dir: ../docs
 navbar:
-  title: Econ 34430
+  title: AKM Simulation - Cemfi Summer School
   left:
   - text: Home
     icon: fa-home
@@ -33,9 +33,9 @@ navbar:
       href: hw-partialdim.html
   right:
   - icon: fa-github
-    href: https://github.com/tlamadon/econ-34430
-  - icon: fa-bug
-    href: https://github.com/tlamadon/econ-34430/issues
+    href: https://github.com/elenamanresa/AKM-simulation/tree/master
+  #- icon: fa-bug
+  #  href: https://github.com/tlamadon/econ-34430/issues
 output:
   html_document:
     theme: cosmo

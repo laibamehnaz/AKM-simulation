@@ -160,7 +160,7 @@ firm_size_t = data[,.N,list(fid,t)]
 setkey(firm_size_t,fid)
 firm_size = firm_size_t[,mean(N),fid]
 data <- data[, firm_size:= firm_size[fid,V1]]
-
+Nfirm = firm_size[.N][[1]]
 
 #movers per firm
 firm_movers_t = data[,max(spell),i] # we identify the movers
@@ -278,8 +278,14 @@ concomp <- function(data){
   return(data)
 }
 
-data <- concomp(data)
 
+data <- concomp(data)
+# compute the number of firms:
+aa = unique(data$fid)
+Nfirm_con = length(aa)
+
+print("proportion of firms in the connected set")
+print(Nfirm_con/Nfirm)
 ```
 
 
@@ -378,6 +384,18 @@ dd=guimaraesPortugal(data)
 
 # estimated coefs on a simple lm must be one
 summary(lm(lw~alpha_hat+psi_hat,data))
+
+```
+```{r}
+print("variance decomposition")
+print("-- true  estimated --")
+print("firm effect")
+print(c(var(data$psi),var(data$psi_hat)))
+print("worker effect")
+print(c(var(data$alpha),var(data$alpha_hat)))
+print("sorting")
+print(c(cov(data$alpha,data$psi),cov(data$alpha_hat,data$psi_hat)))
+
 
 ```
 
