@@ -1,16 +1,11 @@
-name: 'AKM Simulation '
-output_dir: .
+name: "AKM Simulation"
 navbar:
-  title: AKM Simulation - Cemfi Summer School
+  title: "AKM Simulation - Cemfi Summer School" 
   left:
-  - text: Home
-    icon: fa-home
-    href: index.html
-  right:
-  - icon: fa-github
-    href: https://github.com/elenamanresa/AKM-simulation/tree/master
-  #- icon: fa-bug
-  #  href: https://github.com/tlamadon/econ-34430/issues
+    - text: "Homework"
+      icon: fa-books
+      href: index.html
+
 output:
   html_document:
     theme: cosmo
@@ -19,6 +14,3 @@ output:
       after_body: footer.html
       in_header: header.html
     css: styles.css
-    lib_dir: site_libs
-    self_contained: no
-
